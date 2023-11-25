@@ -1,0 +1,14 @@
+{
+  "name": "mobilenerfxx",
+  "version": "0.1.0",
+  "files": [
+    "mobilenerfxx_bg.wasm",
+    "mobilenerfxx.js",
+    "mobilenerfxx.d.ts"
+  ],
+  "module": "mobilenerfxx.js",
+  "types": "mobilenerfxx.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

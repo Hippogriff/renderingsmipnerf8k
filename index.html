@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MobileNeRF++</title>
+    <style>
+        body {
+            background-color: white;
+            display: flex;
+        }
+        canvas {
+            cursor: all-scroll;
+        }
+        #container {
+            position: relative;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+        #fps-counter {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: monospace;
+            font-size: 1.5em;
+            color: black;
+            background-color: #ffffff99;
+            padding: 0.5em;
+            border-radius: 0.5em;
+            margin: 0.5em;
+            z-index: 100;
+        }
+    </style>
+    <script type="module">
+        import init from "./pkg/mobilenerfxx.js";
+        init().then(() => console.log("WASM Module Loaded"));
+    </script>
+</head>
+<body>
+    <div id="container">
+    <canvas id="canvas">
+    </canvas>
+    <span id="fps-counter">FPS: <span id="fps-value">loading...</span></span>
+    </div>
+</body>
+</html>

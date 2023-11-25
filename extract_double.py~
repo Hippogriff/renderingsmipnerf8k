@@ -1,0 +1,85 @@
+import numpy as np
+import imageio
+import matplotlib.pyplot as plt
+
+def double_size(a):
+    a = np.repeat(a, 2, axis=0)
+    a = np.repeat(a, 2, axis=1)
+    return a
+
+fname = "data/texture_4096.npy"
+texdata = np.load(fname, mmap_mode="r")
+num_lobes=6
+sigma = texdata[:, :, -1]
+alpha = (1 - np.exp(-sigma * 0.005))
+
+diffuse = texdata[:, :, :3]
+features = texdata[..., 3:-1]
+print(features.shape)
+
+lobes = np.reshape(features, (features.shape[0], features.shape[1], num_lobes, 7))
+axes = lobes[..., :3]
+lambdas = np.abs(lobes[..., 3])
+c = lobes[..., 4:]
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-np.clip(x, -10, 10)))
+
+print(lobes.shape)
+print(axes.shape)
+print(lambdas.shape)
+print(c.shape)
+
+def compress_polar_coordinates(vectors):
+    vectors = vectors / (np.linalg.norm(vectors, axis=-1, keepdims=True) + 1e-6)
+    azimuth = (np.arctan2(vectors[..., 1], vectors[..., 0]) * 128 / np.pi + 128).astype(np.uint8)
+    elevation = (np.arccos(vectors[..., 2]) * 256 / np.pi).astype(np.uint8)
+    return azimuth, elevation
+
+azimuth, elevation = compress_polar_coordinates(axes)
+
+log_lambda = np.log(np.clip(lambdas, 1e-5, np.inf))
+compressed_lambda = np.clip((log_lambda + 2.5) / 7.5, 0.0, 1.0)
+compressed_lambda = np.array(255 * compressed_lambda, dtype=np.uint8)
+
+def write_color(filename, data):
+    data = np.array(np.clip(data * 255, 0, 255), dtype=np.uint8)
+    data = double_size(data)
+    imageio.imwrite(filename, data)
+
+# diffuse = double_size(diffuse)
+write_color("data/diffuse.png", sigmoid(diffuse))
+
+for i in range(num_lobes):
+    lambda_axis = np.stack([
+        compressed_lambda[..., i],
+        azimuth[..., i],
+        elevation[..., i]
+    ], axis=-1)
+    lambda_axis = double_size(lambda_axis)
+    imageio.imwrite(f"data/lambda_axis_{i}.png", lambda_axis)
+    
+    write_color(f"data/color_{i}.png", sigmoid(c[..., i, :]))
+
+def write(filename, data):
+    data = np.array(np.clip(data * 255, 0, 255), dtype=np.uint8)
+    data = double_size(data)
+    imageio.imwrite(filename, data)
+
+
+write("data/alpha.png", alpha)
+
+quit()
+
+
+def features_to_rgb(features, dir):
+    diffuse_color = features[:, :, :3]
+    # rgb = sigmoid(diffuse_color + spherical_gaussian_mixture(features[:, 3:], dir))
+    rgb = sigmoid(diffuse_color)
+    return rgb
+
+features = texdata[:, :, :-1]
+rgb = features_to_rgb(features, np.array([0, 0, 1]))
+
+print(rgb.shape)
+write("color.png", rgb)
